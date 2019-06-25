@@ -62,13 +62,10 @@ extension ViewController:CLLocationManagerDelegate{
         // 現在位置がlocationsに格納
         if let coordinate = locations.last?.coordinate{
             //現在位置の拡大表示
-//            let span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-//            let region = MKCoordinateRegion(center: coordinate, span: span)
             let latitude = coordinate.latitude
             let longitude = coordinate.longitude
             latitudeLabel.text = "latitude:\(latitude)"
             longitudeLabel.text = "longitude:\(longitude)"
-//            MapView.region = region
             let text = "https://aed.azure-mobile.net/api/AEDSearch?lat=\(latitude)&lng=\(longitude)"
             let url:URL = URL(string: text)!
             
