@@ -9,6 +9,7 @@
 import UIKit
 import MapKit
 import CoreLocation
+import Contacts
 
 struct AEDPlace:Codable {
     var LocationName:String,
@@ -28,8 +29,10 @@ class ViewController: UIViewController {
     @IBOutlet var MapView:MKMapView!
     
     let locationManager = CLLocationManager()
+    var lastCity:String = ""
     var aedPlace:[AEDPlace] = []
-    var aedAnnotation = MKPointAnnotation()
+    var aedAnnotationArray:[MKAnnotation] = []
+    var city:String="",state:String=""
     let API_URL = "https://aed.azure-mobile.net/api/AEDSearch"
     
     override func viewDidLoad() {
@@ -66,8 +69,19 @@ extension ViewController:CLLocationManagerDelegate{
             let longitude = coordinate.longitude
             latitudeLabel.text = "latitude:\(latitude)"
             longitudeLabel.text = "longitude:\(longitude)"
-            let text = "https://aed.azure-mobile.net/api/AEDSearch?lat=\(latitude)&lng=\(longitude)"
-            let url:URL = URL(string: text)!
+            
+            CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: latitude, longitude: longitude), completionHandler:
+                {(placemarks, error) -> Void in
+                    if((error) != nil){
+                        print("Error", error!)
+                    }
+                    if let placemark = placemarks?.first {
+                        self.state = placemark.administrativeArea!
+                        self.city = placemark.locality!
+                    }
+            })
+            let text:String = "https://aed.azure-mobile.net/api/aedinfo/\(self.state)/\(self.city)"
+            let url:URL = URL(string: text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)!
             
             let task:URLSessionTask = URLSession.shared.dataTask(with: url,completionHandler: {data,response,error in
                 do{
@@ -78,11 +92,13 @@ extension ViewController:CLLocationManagerDelegate{
             })
             task.resume()
             for pin in aedPlace{
+                let aedAnnotation = MKPointAnnotation()
                 aedAnnotation.coordinate = CLLocationCoordinate2DMake(pin.Latitude, pin.Longitude)
                 aedAnnotation.title = pin.LocationName
                 aedAnnotation.subtitle = pin.AddressArea
-                self.MapView.addAnnotation(aedAnnotation)
+                self.aedAnnotationArray.append(aedAnnotation)
             }
+            self.MapView.addAnnotations(aedAnnotationArray)
         }
     }
 }
